@@ -1062,14 +1062,14 @@ function getCardStats(key){
   const c = CARD_TYPES[key];
   const lvl = cardLevels[key]||1;
   const evoLvl = evolutions[key]||0;
-  const mult = Math.pow(1.1, lvl-1) * evoStatMult(evoLvl); // nível soma 10% + bônus de evolução
+  const mult = Math.pow(1.05, lvl-1) * evoStatMult(evoLvl); // nível soma 5% + bônus de evolução
   return { hp: Math.max(1,Math.round(c.hp*mult)), dmg: Math.max(1,Math.round(c.dmg*mult)) };
 }
 // evoLvl é opcional (padrão 0 = sem bônus de evolução), pra manter compatível
 // com quem ainda chama statsAtLevel só com (key, level).
 function statsAtLevel(key, level, evoLvl){
   const c = CARD_TYPES[key];
-  const mult = Math.pow(1.1, (level||1)-1) * evoStatMult(evoLvl||0);
+  const mult = Math.pow(1.05, (level||1)-1) * evoStatMult(evoLvl||0);
   return { hp: Math.max(1,Math.round(c.hp*mult)), dmg: Math.max(1,Math.round(c.dmg*mult)) };
 }
 
@@ -1126,11 +1126,16 @@ function enemyLevelRange(arenaIdx, betIdx){
 function rollEnemyLevels(arenaIdx, betIdx){
   const [lo,hi] = enemyLevelRange(arenaIdx, betIdx);
   const evoWeights = ARENA_EVO_WEIGHTS[clamp(arenaIdx, 0, ARENA_EVO_WEIGHTS.length-1)];
+  // Nível único e fixo pro inimigo inteiro (cartas + torre), sorteado uma
+  // vez dentro do range da arena/aposta — em vez de um nível aleatório
+  // diferente por carta. Ex: sorteia 12, então todas as cartas do inimigo
+  // e a torre dele ficam nível 12.
+  const fixedLevel = lo + Math.floor(Math.random()*(hi-lo+1));
   CARD_KEYS.forEach(k=>{
-    enemyCardLevels[k] = lo + Math.floor(Math.random()*(hi-lo+1));
+    enemyCardLevels[k] = fixedLevel;
     enemyEvolutions[k] = weightedPick(evoWeights);
   });
-  enemyTowerLevel = lo + Math.floor(Math.random()*(hi-lo+1));
+  enemyTowerLevel = fixedLevel;
 }
 
 
